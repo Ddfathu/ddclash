@@ -16,14 +16,13 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Setup Core Submodule & Mihomo Core
+      - name: Setup Core Submodule (Mihomo/Clash)
         run: |
-          git submodule update --init --recursive || true
-          TARGET_DIR="core/src/main/golang/clash"
-          if [ ! -f "$TARGET_DIR/go.mod" ]; then
-            echo "[*] Cloning Mihomo Core into $TARGET_DIR..."
-            rm -rf "$TARGET_DIR"
-            git clone --depth=1 https://github.com/MetaCubeX/mihomo.git "$TARGET_DIR"
+          mkdir -p core/src/main/golang
+          if [ ! -f "core/src/main/golang/clash/go.mod" ]; then
+            echo "[*] Cloning mihomo core into core/src/main/golang/clash..."
+            rm -rf core/src/main/golang/clash
+            git clone --depth=1 https://github.com/MetaCubeX/mihomo.git core/src/main/golang/clash
           fi
 
       - name: Set up Go
@@ -46,9 +45,6 @@ jobs:
 
       - name: Make Gradlew Executable
         run: chmod +x gradlew
-
-      - name: Download Geo Files & Assets
-        run: ./gradlew downloadGeoFiles || true
 
       - name: Build APK (Release Flavor Meta)
         run: ./gradlew assembleMetaRelease --stacktrace
