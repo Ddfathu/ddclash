@@ -16,16 +16,6 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Setup Core Submodule & Mihomo Core
-        run: |
-          git submodule update --init --recursive || true
-          TARGET_DIR="core/src/main/golang/clash"
-          if [ ! -f "$TARGET_DIR/go.mod" ]; then
-            echo "[*] Cloning Mihomo Core into $TARGET_DIR..."
-            rm -rf "$TARGET_DIR"
-            git clone --depth=1 https://github.com/MetaCubeX/mihomo.git "$TARGET_DIR"
-          fi
-
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -44,11 +34,23 @@ jobs:
         with:
           ndk-version: r26b
 
+      - name: Inject Core Dependencies & Geo Assets
+        run: |
+          # 1. Pastikan folder submodule core terisi
+          mkdir -p core/src/main/golang
+          if [ ! -f "core/src/main/golang/clash/go.mod" ]; then
+            echo "[*] Cloning Mihomo Core..."
+            rm -rf core/src/main/golang/clash
+            git clone --depth=1 -b main https://github.com/MetaCubeX/mihomo.git core/src/main/golang/clash
+          fi
+
+          # 2. Unduh Geo Database agar verifikasi resource common tidak FAILED
+          mkdir -p core/src/main/assets
+          curl -s -L -o core/src/main/assets/geoip.dat https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.dat || true
+          curl -s -L -o core/src/main/assets/geosite.dat https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat || true
+
       - name: Make Gradlew Executable
         run: chmod +x gradlew
-
-      - name: Download Geo Files & Assets
-        run: ./gradlew downloadGeoFiles || true
 
       - name: Build APK (Release Flavor Meta)
         run: ./gradlew assembleMetaRelease --stacktrace
