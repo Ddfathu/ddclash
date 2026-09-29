@@ -23,7 +23,6 @@ jobs:
             rm -rf core/src/foss/golang/clash
             git clone --depth=1 -b main https://github.com/MetaCubeX/mihomo.git core/src/foss/golang/clash
           fi
-          # Buat symlink jaga-jaga bila dicari di path main
           mkdir -p core/src/main/golang
           ln -sfn ../foss/golang/clash core/src/main/golang/clash 2>/dev/null || true
 
@@ -57,6 +56,9 @@ jobs:
           sudo update-ca-certificates
           mkdir -p core/src/foss/golang/clash/component/ca
           cp -f /etc/ssl/certs/ca-certificates.crt core/src/foss/golang/clash/component/ca/ca-certificates.crt || true
+
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x gradlew
 
       - name: Build APK
         run: ./gradlew --no-daemon app:assembleAlphaRelease --stacktrace
