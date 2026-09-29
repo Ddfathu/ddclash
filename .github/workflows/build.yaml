@@ -14,17 +14,21 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Core Submodule & Mihomo
+      - name: Force Inject Mihomo Core v1.7.0
         run: |
-          git submodule update --init --recursive --force || true
+          # Hapus folder clash kosong bawaan push lokal
+          rm -rf core/src/foss/golang/clash
           mkdir -p core/src/foss/golang
-          if [ ! -f "core/src/foss/golang/clash/go.mod" ]; then
-            echo "[*] Cloning Mihomo Core into core/src/foss/golang/clash..."
-            rm -rf core/src/foss/golang/clash
-            git clone --depth=1 -b main https://github.com/MetaCubeX/mihomo.git core/src/foss/golang/clash
+          
+          # Clone persis tag v1.7.0 yang diminta modul go.mod
+          git clone --depth=1 --branch v1.7.0 https://github.com/MetaCubeX/mihomo.git core/src/foss/golang/clash
+          
+          # Verifikasi keberadaan go.mod
+          if [ -f "core/src/foss/golang/clash/go.mod" ]; then
+            echo "[✓] Core Mihomo v1.7.0 berhasil disiapkan!"
+          else
+            echo "[✗] Gagal menyiapkan core!" && exit 1
           fi
-          mkdir -p core/src/main/golang
-          ln -sfn ../foss/golang/clash core/src/main/golang/clash 2>/dev/null || true
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -52,7 +56,7 @@ jobs:
 
       - name: Update CA
         run: |
-          sudo apt-get update && sudo apt-get install ca-certificates
+          sudo apt-get update && sudo apt-get install -y ca-certificates
           sudo update-ca-certificates
           mkdir -p core/src/foss/golang/clash/component/ca
           cp -f /etc/ssl/certs/ca-certificates.crt core/src/foss/golang/clash/component/ca/ca-certificates.crt || true
@@ -63,7 +67,7 @@ jobs:
       - name: Build APK
         run: ./gradlew --no-daemon app:assembleAlphaRelease --stacktrace
 
-      - name: Upload DDclash APK (Semua Arsitektur)
+      - name: Upload DDclash APK
         uses: actions/upload-artifact@v4
         if: success()
         with:
